@@ -1,0 +1,6 @@
+# redis/Dockerfile
+FROM redis:6
+
+CMD ["redis-server", "--appendonly", "yes"]
+
+VOLUME /data

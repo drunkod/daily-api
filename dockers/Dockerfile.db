@@ -1,0 +1,11 @@
+# db/Dockerfile
+FROM postgres:15.4-alpine
+
+ENV POSTGRES_MULTIPLE_DATABASES=api,api_test
+ENV POSTGRES_PASSWORD=12345
+
+COPY pg-init-scripts /docker-entrypoint-initdb.d
+
+VOLUME /var/lib/postgresql/data
+
+CMD ["postgres", "-c", "wal_level=logical"]

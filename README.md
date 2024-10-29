@@ -76,3 +76,16 @@ So you want to contribute to Daily API and make an impact, we are glad to hear i
 Before you proceed we have a few guidelines for contribution that will make everything much easier.
 We would appreciate if you dedicate the time and read them carefully:
 https://github.com/dailydotdev/.github/blob/master/CONTRIBUTING.md
+
+## limits https://console.cloudinary.com/
+
+Monthly Transformations - Number of all newly processed assets including original uploads and derivatives (images and video-frames) within the last 30 days (more information).
+
+Managed Storage - The accumulated size of all of your assets, which are stored on your Cloudinary account, including backups if enabled (more information).
+
+Monthly Net Viewing Bandwidth - Total bandwidth of content delivered from your account within the last 30 days.
+
+
+25k Monthly Transformations or
+25GB Managed Storage or
+25GB Monthly Net Viewing Bandwidth

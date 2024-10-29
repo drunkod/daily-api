@@ -1,8 +1,8 @@
 FROM node:20-alpine
 
-# Install necessary packages
-RUN apk add --no-cache ca-certificates dumb-init
 
+# Установите необходимые пакеты, включая gcompat
+RUN apk add --no-cache ca-certificates dumb-init gcompat
 # Create application directory
 RUN mkdir -p /opt/app
 WORKDIR /opt/app
