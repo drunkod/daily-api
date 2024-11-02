@@ -67,6 +67,7 @@ import {
   votePost,
   CioTransactionalMessageTemplateId,
   validateWorkEmailDomain,
+  type GQLUserTopReader,
 } from '../common';
 import { getSearchQuery, GQLEmptyResponse, processSearchQuery } from './common';
 import { ActiveView } from '../entity/ActiveView';
@@ -684,6 +685,33 @@ export const typeDefs = /* GraphQL */ `
     edges: [UserIntegrationEdge!]!
   }
 
+  type UserTopReader {
+    """
+    Unique identifier for the top reader badge
+    """
+    id: ID
+
+    """
+    User
+    """
+    user: User
+
+    """
+    Date and time when the badge was issued
+    """
+    issuedAt: DateTime
+
+    """
+    Keyword
+    """
+    keyword: Keyword
+
+    """
+    URL to the badge image
+    """
+    image: String
+  }
+
   extend type Query {
     """
     Get user based on logged in session
@@ -836,6 +864,16 @@ export const typeDefs = /* GraphQL */ `
     Get companies for user
     """
     companies: [UserCompany] @auth
+
+    """
+    Get the latest top reader badges for the user
+    """
+    topReaderBadge(limit: Int): [UserTopReader] @auth
+
+    """
+    Get the top reader badge based on badge ID
+    """
+    topReaderBadgeById(id: ID!): UserTopReader
   }
 
   extend type Mutation {
@@ -1657,6 +1695,49 @@ export const resolvers: IResolvers<unknown, BaseContext> = traceResolvers<
           );
           return builder;
         },
+      );
+    },
+    topReaderBadge: async (
+      _,
+      { limit = 5 }: { limit: number },
+      ctx: AuthContext,
+      info: GraphQLResolveInfo,
+    ) => {
+      return graphorm.query<GQLUserTopReader>(
+        ctx,
+        info,
+        (builder) => {
+          builder.queryBuilder = builder.queryBuilder
+            .andWhere(`${builder.alias}.userId = :userId`, {
+              userId: ctx.userId,
+            })
+            .orderBy({
+              '"issuedAt"': 'DESC',
+            })
+            .limit(limit);
+          return builder;
+        },
+        true,
+      );
+    },
+    topReaderBadgeById: async (
+      _,
+      { id }: { id: string },
+      ctx: AuthContext,
+      info: GraphQLResolveInfo,
+    ) => {
+      return graphorm.queryOneOrFail<GQLUserTopReader>(
+        ctx,
+        info,
+        (builder) => {
+          builder.queryBuilder = builder.queryBuilder.andWhere(
+            `${builder.alias}.id = :id`,
+            { id },
+          );
+          return builder;
+        },
+        'top reader badge',
+        true,
       );
     },
   },
