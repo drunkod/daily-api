@@ -23,7 +23,9 @@ const worker = workerToExperimentWorker({
     }
 
     const growthbookClient = getUserGrowthBookInstace(user.id, {
-      enableDevMode: process.env.NODE_ENV !== 'production',
+      // enableDevMode: process.env.NODE_ENV !== 'production',
+      enableDevMode: true,
+
       subscribeToChanges: false,
       allocationClient,
     });
