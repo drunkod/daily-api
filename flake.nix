@@ -85,7 +85,12 @@
       '';
     };
     dev = pkgs.mkShell {
-            nativeBuildInputs = with pkgs; [corepack];
+       nativeBuildInputs =
+       bareMinimum
+       ++ (with pkgs; [
+       #prisma-engines
+       openssl
+       ]);
       shellHook = '' 
         npm install
         npm run db:migrate:latest
@@ -98,7 +103,7 @@
         echo "Node.js version: $(node --version)"
         echo "npm version: $(npm --version)"
         echo "Working directory: $(pwd)"
-        
+
         # Function to start the application
         dev_app() {
             npm run dev
