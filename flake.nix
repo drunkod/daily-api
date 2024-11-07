@@ -91,7 +91,14 @@
         npm run db:migrate:latest
         npm run db:seed:import
         
-
+        # Set up environment variables
+        export NODE_ENV=development
+        
+        # Print environment info
+        echo "Node.js version: $(node --version)"
+        echo "npm version: $(npm --version)"
+        echo "Working directory: $(pwd)"
+        
         # Function to start the application
         dev_app() {
             npm run dev
