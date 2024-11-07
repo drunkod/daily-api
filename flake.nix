@@ -9,19 +9,16 @@
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
   in {
-    devShells."${system}".default = pkgs.mkShell {
-      packages = with pkgs; [
-        # Core dependencies
-        nodejs_20
-        # dumb-init
-        
-        # Build essentials
-        # pkg-config
-        
-        # Additional tools that might be useful
-        git
-        # cacert
-      ];
+    devShells."${system}" = let
+          bareMinimum = with pkgs; [nodejs_20 git];
+    in {      
+    default = pkgs.mkShell {
+      nativeBuildInputs =
+       bareMinimum
+       ++ (with pkgs; [
+       #prisma-engines
+       openssl
+       ]);  
 
       shellHook = ''
 
@@ -87,7 +84,17 @@
         echo "To start the application, run: start_app"
       '';
     };
+    ci-format = pkgs.mkShell {
+            nativeBuildInputs = with pkgs; [corepack];
+          };
 
+    ci-reviewdog = pkgs.mkShell {
+            nativeBuildInputs = with pkgs; [
+              corepack
+              nodejs_22
+            ];
+    };
+    };
     # Optional: Add a package definition if you want to build it
     packages."${system}".default = pkgs.stdenv.mkDerivation {
       name = "node-app";
@@ -117,5 +124,6 @@
         chmod +x $out/bin/start-app
       '';
     };
+    
   };
 }
