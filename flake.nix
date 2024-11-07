@@ -84,6 +84,23 @@
         echo "To start the application, run: start_app"
       '';
     };
+    dev = pkgs.mkShell {
+            nativeBuildInputs = with pkgs; [corepack];
+      shellHook = '' 
+        npm install
+        npm run db:migrate:latest
+        npm run db:seed:import
+        
+
+        # Function to start the application
+        dev_app() {
+            npm run dev
+        }
+
+        echo "To start the application, run: dev_app"
+
+      '';      
+          };    
     ci-format = pkgs.mkShell {
             nativeBuildInputs = with pkgs; [corepack];
           };
