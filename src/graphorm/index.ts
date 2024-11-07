@@ -16,6 +16,7 @@ import {
   Feature,
   FeatureType,
   SettingsFlagsPublic,
+  UserStats,
 } from '../entity';
 import {
   SourceMemberRoles,
@@ -167,6 +168,16 @@ const obj = new GraphORM({
         },
         transform: nullIfNotLoggedIn,
       },
+      topReader: {
+        relation: {
+          isMany: false,
+          customRelation: (_, parentAlias, childAlias, qb): QueryBuilder =>
+            qb
+              .where(`${childAlias}."userId" = ${parentAlias}.id`)
+              .orderBy(`${childAlias}."issuedAt"`, 'DESC')
+              .limit(1),
+        },
+      },
     },
   },
   UserCompany: {
@@ -203,7 +214,17 @@ const obj = new GraphORM({
           parentColumn: 'userId',
         },
       },
+      total: {
+        select: (_, alias, qb) =>
+          qb
+            .select('us."topReaderBadges"')
+            .from(UserStats, 'us')
+            .where(`us."id" = ${alias}."userId"`),
+      },
     },
+  },
+  SourcePostModeration: {
+    requiredColumns: ['id'],
   },
   UserStreak: {
     requiredColumns: ['lastViewAt'],

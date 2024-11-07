@@ -49,6 +49,7 @@ import {
   UserPersonalizedDigestSendType,
   UserPersonalizedDigestType,
   UserPost,
+  UserStats,
   UserStreak,
   UserStreakAction,
   UserStreakActionType,
@@ -106,6 +107,7 @@ import { getRestoreStreakCache } from '../src/workers/cdc/primary';
 import { ContentPreferenceUser } from '../src/entity/contentPreference/ContentPreferenceUser';
 import { ContentPreferenceStatus } from '../src/entity/contentPreference/types';
 import { identifyUserPersonalizedDigest } from '../src/cio';
+import type { GQLUser } from '../src/schema/users';
 
 let con: DataSource;
 let app: FastifyInstance;
@@ -5699,19 +5701,25 @@ describe('query topReaderBadgeById', () => {
 });
 
 describe('query topReaderBadge', () => {
-  const QUERY = `query TopReaderBadge($limit: Int = 5) {
-    topReaderBadge(limit: $limit) {
-      id
-      issuedAt
-      image
-      keyword {
-        value
-        flags {
-          title
+  const QUERY = /* GraphQL */ `
+    query TopReaderBadge($limit: Int, $userId: ID!) {
+      topReaderBadge(limit: $limit, userId: $userId) {
+        id
+        issuedAt
+        image
+        total
+        keyword {
+          value
+          flags {
+            title
+          }
+        }
+        user {
+          id
         }
       }
     }
-  }`;
+  `;
 
   beforeEach(async () => {
     await saveFixtures(
@@ -5724,7 +5732,14 @@ describe('query topReaderBadge', () => {
         },
       })),
     );
-    await saveFixtures(con, User, [usersFixture[1]]);
+    await saveFixtures(
+      con,
+      User,
+      [usersFixture[0], usersFixture[1]].map((user) => ({
+        ...user,
+        infoConfirmed: true,
+      })),
+    );
     await saveFixtures(con, UserTopReader, [
       {
         userId: '1',
@@ -5763,6 +5778,7 @@ describe('query topReaderBadge', () => {
         image: 'https://daily.dev/image.jpg',
       },
       {
+        id: 'bb48487e-a778-4f66-ae6c-159438fca86e',
         userId: '2',
         issuedAt: new Date(),
         keywordValue: 'kw_1',
@@ -5775,11 +5791,17 @@ describe('query topReaderBadge', () => {
         image: 'https://daily.dev/image.jpg',
       },
     ]);
+
+    await con.query(
+      `REFRESH MATERIALIZED VIEW ${con.getRepository(UserStats).metadata.tableName}`,
+    );
   });
 
   it('should return the 5 most recent top reader badges', async () => {
     loggedUser = '1';
-    const res = await client.query(QUERY);
+    const res = await client.query(QUERY, {
+      variables: { userId: loggedUser },
+    });
     const topReaderBadge: GQLUserTopReader[] = res.data.topReaderBadge;
 
     expect(res.errors).toBeFalsy();
@@ -5793,12 +5815,66 @@ describe('query topReaderBadge', () => {
   it('should limit the return to 1 top reader badge', async () => {
     loggedUser = '1';
     const res = await client.query(QUERY, {
-      variables: { limit: 1 },
+      variables: { limit: 1, userId: loggedUser },
     });
     const topReaderBadge: GQLUserTopReader[] = res.data.topReaderBadge;
 
     expect(res.errors).toBeFalsy();
     expect(topReaderBadge.length).toEqual(1);
     expect(topReaderBadge[0].keyword.value).toEqual('kw_6');
+  });
+
+  it('should return top reader badge by userId', async () => {
+    loggedUser = '1';
+    const res = await client.query(QUERY, {
+      variables: { userId: '2' },
+    });
+    expect(res.errors).toBeFalsy();
+    expect(res.data.topReaderBadge[0].user.id).toEqual('2');
+  });
+
+  it('should return the total number of badges', async () => {
+    loggedUser = '1';
+    const res = await client.query(QUERY, {
+      variables: { userId: loggedUser },
+    });
+    expect(res.errors).toBeFalsy();
+    expect(res.data.topReaderBadge[0].total).toEqual(6);
+  });
+
+  describe('topReader field on User', () => {
+    const QUERY = /* GraphQL */ `
+      query User($id: ID!) {
+        user(id: $id) {
+          id
+          topReader {
+            id
+          }
+        }
+      }
+    `;
+    it('should return the top reader badge for the user', async () => {
+      loggedUser = '1';
+
+      const res = await client.query(QUERY, { variables: { id: '2' } });
+      const user: GQLUser = res.data.user;
+
+      expect(res.errors).toBeFalsy();
+      expect(user.id).toEqual('2');
+      expect(user.topReader?.id).toEqual(
+        'bb48487e-a778-4f66-ae6c-159438fca86e',
+      );
+    });
+
+    it('should return null if the user has no top reader badge', async () => {
+      loggedUser = '1';
+
+      const res = await client.query(QUERY, { variables: { id: '3' } });
+      const user: GQLUser = res.data.user;
+
+      expect(res.errors).toBeFalsy();
+      expect(user.id).toEqual('3');
+      expect(user.topReader).toBeNull();
+    });
   });
 });
