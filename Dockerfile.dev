@@ -12,6 +12,7 @@ COPY .npmrc .
 COPY package.json .
 COPY package-lock.json .
 COPY patches patches
+COPY queries queries
 
 # Install production dependencies
 RUN npm install --only=prod
