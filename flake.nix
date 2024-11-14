@@ -11,7 +11,8 @@
   in {
     devShells."${system}" = let
           bareMinimum = with pkgs; [nodejs_20 git];
-    in {      
+    in {
+            
     default = pkgs.mkShell {
       nativeBuildInputs =
        bareMinimum
@@ -24,8 +25,8 @@
 
         # Create working directory structure
         export PROJECT_ROOT="$PWD"
-        WORK_DIR="/tmp/app"
-        if [ ! -d "/tmp/app" ]; then
+        WORK_DIR="$PWD/app"
+        if [ ! -d "$PWD/app" ]; then
             mkdir -p "$WORK_DIR"
             chmod 755 "$WORK_DIR"
         fi
@@ -35,29 +36,22 @@
           npm run build
         fi  
 
-        cd /tmp/app
+        cd $PWD/app
 
-        # Copy configuration files if they exist in the project root
-        if [ -f "$PROJECT_ROOT/.npmrc" ]; then
+        # Copy configuration files 
           cp "$PROJECT_ROOT/.npmrc" .
-        fi
+          cp "$PROJECT_ROOT/.env" .
         
-        if [ -f "$PROJECT_ROOT/package.json" ]; then
           cp "$PROJECT_ROOT/package.json" .
-        fi
         
-        if [ -f "$PROJECT_ROOT/package-lock.json" ]; then
           cp "$PROJECT_ROOT/package-lock.json" .
-        fi
         
-        if [ -d "$PROJECT_ROOT/patches" ]; then
           cp -r "$PROJECT_ROOT/patches" .
-        fi
 
-        # Install production dependencies if package.json exists
-        if [ -f "package.json" ]; then
+          cp -r "$PROJECT_ROOT/queries" .
+
+        # Install production dependencies
           npm i --only=prod
-        fi
 
         # Copy build directory if it exists
         if [ -d "$PROJECT_ROOT/build" ]; then
@@ -69,7 +63,7 @@
         fi
 
         # Set up environment variables
-        export NODE_ENV=production
+          export NODE_ENV=test
         
         # Print environment info
         echo "Node.js version: $(node --version)"
